@@ -1,0 +1,14 @@
+name: 'fx_dbt_project'
+version: '1.0'
+config-version: 2
+
+model-paths: ["models"]
+
+models:
+  fx_dbt_project:
+    bronze:
+      materialized: view
+    silver:
+      materialized: incremental
+    gold:
+      materialized: table

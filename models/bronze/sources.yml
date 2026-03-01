@@ -1,0 +1,17 @@
+version: 2
+
+sources:
+  - name: raw
+    database: analytics
+    schema: raw
+    tables:
+      - name: transactions_raw
+      - name: customers_raw
+      - name: branches_raw
+      - name: fx_rates_raw
+      - name: consent_raw
+      - name: feedback_raw
+      - name: banks_raw
+      - name: cash_lease_raw
+      - name: vault_stock_raw
+      - name: bank_settlement_raw
