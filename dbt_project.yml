@@ -37,8 +37,14 @@ models:
       columns: true
     bronze:
       +materialized: view
+      +schema: bronze
     silver:
       +materialized: incremental
       +incremental_strategy: merge
+      +schema: silver
     gold:
       +materialized: table
+      +schema: bronze
+snapshots:
+  forex_data_mart:
+    +target_schema: dev_bronze

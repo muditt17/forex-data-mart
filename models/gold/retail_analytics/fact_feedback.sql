@@ -1,12 +1,11 @@
 {{ config(materialized='table') }}
 
 select
-  to_number(to_char(cast(feedback_ts as date),'YYYYMMDD')) as date_sk,
-  {{ hash_key(['customer_id']) }} as customer_sk,
-  {{ hash_key(['branch_id']) }} as branch_sk,
-  feedback_id,
-  rating,
-  comments,
+  cast(to_char(s.feedback_ts,'YYYYMMDD') as integer) as date_sk,
+  s.customer_hk as customer_sk,
+  s.branch_hk as branch_sk,
+  s.feedback_id,
+  s.rating,
+  s.comments,
   1 as feedback_count
-from {{ ref('feedback_raw') }}
-where feedback_id is not null
+from {{ ref('sat_feedback_details') }} s

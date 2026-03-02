@@ -1,0 +1,72 @@
+version: 2
+
+models:
+  - name: dim_bank
+    description: "Bank dimension for treasury reporting."
+    config: { tags: ["gold", "treasury", "dim", "bank"] }
+    columns:
+      - name: bank_sk
+        description: "Bank surrogate key (bank_hk)."
+        tests: [not_null, unique]
+      - name: bank_id
+        description: "Bank business key."
+
+  - name: dim_lease
+    description: "Current cash lease dimension (from lease satellite)."
+    config: { tags: ["gold", "treasury", "dim", "lease"] }
+    columns:
+      - name: lease_sk
+        description: "Lease surrogate key (lease_hk)."
+        tests: [not_null, unique]
+      - name: lease_id
+        description: "Lease business key."
+      - name: bank_sk
+        description: "FK to dim_bank."
+      - name: currency_sk
+        description: "FK to currency dimension (via currency hash)."
+      - name: lease_amount
+        description: "Total leased amount."
+      - name: interest_rate
+        description: "Interest rate percent."
+      - name: lease_start
+        description: "Lease start date."
+      - name: lease_end
+        description: "Lease end date."
+      - name: lease_status
+        description: "Lease status (scheduled/active/ended)."
+
+  - name: fact_vault_inventory_snapshot
+    description: "Daily vault inventory snapshot fact table."
+    config: { tags: ["gold", "treasury", "fact", "inventory", "vault"] }
+    columns:
+      - name: date_sk
+        description: "Date key (YYYYMMDD)."
+      - name: branch_sk
+        description: "Branch key."
+      - name: currency_sk
+        description: "Currency key."
+      - name: opening_balance
+        description: "Opening balance."
+      - name: closing_balance
+        description: "Closing balance."
+      - name: net_outflow_amount
+        description: "opening_balance - closing_balance (proxy for consumption)."
+
+  - name: fact_cash_consumption
+    description: "Branch currency consumption allocated to an active lease (simplified real-world approach)."
+    config: { tags: ["gold", "treasury", "fact", "consumption", "cash_lease"] }
+    columns:
+      - name: date_sk
+        description: "Date key (YYYYMMDD)."
+      - name: branch_sk
+        description: "Branch key."
+      - name: currency_sk
+        description: "Currency key."
+      - name: bank_sk
+        description: "Bank key (allocated)."
+      - name: lease_sk
+        description: "Lease key (allocated)."
+      - name: total_sold_amount
+        description: "Estimated sold amount (opening - closing)."
+      - name: consumption_rate
+        description: "total_sold_amount / lease_amount."

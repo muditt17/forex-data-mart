@@ -1,0 +1,6 @@
+bank_id,bank_name,country,bank_type,ingestion_timestamp
+BANK10,SBI,India,Foreign,2026-03-01 10:00:00
+BANK11,HDFC Bank,India,Public,2026-03-01 10:00:00
+BANK12,ICICI Bank,India,Private,2026-03-01 10:00:00
+BANK13,HSBC,UK,Public,2026-03-01 10:00:00
+BANK14,Axis Bank,India,Foreign,2026-03-01 10:00:00

@@ -1,7 +1,6 @@
 {% snapshot branch_snapshot %}
 {{
   config(
-    target_schema='snapshots',
     unique_key='branch_id',
     strategy='check',
     check_cols=['branch_name','city','country'],

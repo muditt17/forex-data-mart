@@ -1,0 +1,50 @@
+version: 2
+
+models:
+  - name: fact_bank_settlement
+    description: "Settlement fact for bank payments and outstanding balance calculations."
+    config: { tags: ["gold", "bank_reporting", "fact", "settlement"] }
+    columns:
+      - name: date_sk
+        description: "Date key (YYYYMMDD) for settlement_date."
+      - name: bank_sk
+        description: "Bank key."
+      - name: lease_sk
+        description: "Lease key."
+      - name: currency_sk
+        description: "Currency key."
+      - name: settlement_id
+        description: "Settlement business key."
+      - name: lease_id
+        description: "Lease business key."
+      - name: lease_amount
+        description: "Principal leased amount."
+      - name: interest_rate
+        description: "Interest rate percent."
+      - name: interest_amount
+        description: "Computed interest amount (simple model)."
+      - name: settlement_amount
+        description: "Paid amount."
+      - name: outstanding_balance
+        description: "Principal + interest - paid amount."
+
+  - name: bank_consumption_report
+    description: "Bank-facing consumption + settlement summary view (daily grain)."
+    config: { tags: ["gold", "bank_reporting", "reporting", "view"] }
+    columns:
+      - name: date_sk
+        description: "Date key (YYYYMMDD)."
+      - name: bank_sk
+        description: "Bank key."
+      - name: currency_sk
+        description: "Currency key."
+      - name: sold_amount
+        description: "Total sold/consumed amount allocated to bank."
+      - name: avg_consumption_rate
+        description: "Average utilization proxy."
+      - name: settlement_amount
+        description: "Total settlement amount."
+      - name: interest_amount
+        description: "Total interest amount."
+      - name: outstanding_balance
+        description: "Total outstanding balance."

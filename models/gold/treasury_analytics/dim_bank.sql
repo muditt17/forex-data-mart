@@ -2,5 +2,8 @@
 
 select
   bank_hk as bank_sk,
-  business_key as bank_id
-from {{ ref('hub_bank') }}
+  bank_id,
+  bank_name,
+  country,
+  bank_type
+from {{ ref('sat_bank_details') }}

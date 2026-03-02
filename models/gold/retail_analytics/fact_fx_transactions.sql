@@ -1,7 +1,7 @@
 {{ config(materialized='table') }}
 
 select
-  to_number(to_char(cast(s.transaction_ts as date),'YYYYMMDD')) as date_sk,
+  cast(to_char(s.transaction_ts,'YYYYMMDD') as integer) as date_sk,
   s.customer_hk as customer_sk,
   s.branch_hk as branch_sk,
   s.from_currency_hk as from_currency_sk,

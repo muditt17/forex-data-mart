@@ -2,14 +2,14 @@
 
 with src as (
   select distinct customer_id
-  from {{ ref('customers_raw') }}
+  from {{ ref('customer_snapshot') }}
   where customer_id is not null
 )
 select
   {{ hash_key(['customer_id']) }} as customer_hk,
   customer_id as business_key,
   current_timestamp as load_date,
-  'customers_raw' as record_source
+  'customers_snapshot' as record_source
 from src
 
 {% if is_incremental() %}

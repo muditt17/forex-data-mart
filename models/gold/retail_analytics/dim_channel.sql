@@ -2,7 +2,7 @@
 
 with src as (
   select distinct channel as channel_name
-  from {{ ref('transactions_raw') }}
+  from {{ ref('sat_transaction_financials') }}
   where channel is not null
 )
 select

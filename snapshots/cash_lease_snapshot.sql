@@ -1,7 +1,6 @@
 {% snapshot cash_lease_snapshot %}
 {{
   config(
-    target_schema='snapshots',
     unique_key='lease_id',
     strategy='check',
     check_cols=['bank_id','currency_code','lease_amount','interest_rate','lease_start','lease_end'],

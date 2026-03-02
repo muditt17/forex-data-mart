@@ -1,0 +1,9 @@
+branch_id,branch_name,city,country,region,opened_date,ingestion_timestamp
+BR100,Mumbai Central Exchange,Mumbai,India,West,2017-01-01,2026-03-01 10:00:00
+BR101,Delhi Central Exchange,Delhi,India,North,2018-02-02,2026-03-01 10:00:00
+BR102,Bengaluru Central Exchange,Bengaluru,India,South,2019-03-03,2026-03-01 10:00:00
+BR103,Hyderabad Central Exchange,Hyderabad,India,South,2020-04-04,2026-03-01 10:00:00
+BR104,Chennai Central Exchange,Chennai,India,South,2021-05-05,2026-03-01 10:00:00
+BR105,Pune Central Exchange,Pune,India,West,2017-06-06,2026-03-01 10:00:00
+BR106,Kolkata Central Exchange,Kolkata,India,East,2018-07-07,2026-03-01 10:00:00
+BR107,Ahmedabad Central Exchange,Ahmedabad,India,West,2019-08-08,2026-03-01 10:00:00

@@ -2,14 +2,14 @@
 
 with src as (
   select distinct consent_id
-  from {{ ref('consent_raw') }}
+  from {{ ref('consent_snapshot') }}
   where consent_id is not null
 )
 select
   {{ hash_key(['consent_id']) }} as consent_hk,
   consent_id as business_key,
   current_timestamp as load_date,
-  'consent_raw' as record_source
+  'consent_snapshot' as record_source
 from src
 
 {% if is_incremental() %}

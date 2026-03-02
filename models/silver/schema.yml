@@ -1,0 +1,323 @@
+version: 2
+
+models:
+  # Hubs
+  - name: hub_customer
+    description: "Data Vault hub for customer business keys sourced from customer snapshot."
+    config: { tags: ["silver","dv","hub","customer"] }
+    columns:
+      - name: customer_hk
+        description: "Hashed customer key."
+        tests: [not_null, unique]
+      - name: business_key
+        description: "Customer business key (customer_id)."
+        tests: [not_null]
+      - name: load_date
+        description: "Hub load timestamp."
+      - name: record_source
+        description: "Record source."
+
+  - name: hub_branch
+    description: "Data Vault hub for branch business keys sourced from branch snapshot."
+    config: { tags: ["silver","dv","hub","branch"] }
+    columns:
+      - name: branch_hk
+        description: "Hashed branch key."
+        tests: [not_null, unique]
+      - name: business_key
+        description: "Branch business key (branch_id)."
+        tests: [not_null]
+      - name: load_date
+        description: "Hub load timestamp."
+      - name: record_source
+        description: "Record source."
+
+  - name: hub_transaction
+    description: "Data Vault hub for transaction business keys."
+    config: { tags: ["silver","dv","hub","transaction"] }
+    columns:
+      - name: transaction_hk
+        description: "Hashed transaction key."
+        tests: [not_null, unique]
+      - name: business_key
+        description: "Transaction business key (transaction_id)."
+        tests: [not_null]
+      - name: load_date
+        description: "Hub load timestamp."
+      - name: record_source
+        description: "Record source."
+
+  - name: hub_currency
+    description: "Data Vault hub for currency business keys derived from transactions, leases (snapshot) and vault inventory."
+    config: { tags: ["silver","dv","hub","currency"] }
+    columns:
+      - name: currency_hk
+        description: "Hashed currency key."
+        tests: [not_null, unique]
+      - name: currency_code
+        description: "Currency code."
+        tests: [not_null]
+      - name: load_date
+        description: "Hub load timestamp."
+      - name: record_source
+        description: "Record source."
+
+  - name: hub_bank
+    description: "Data Vault hub for bank business keys."
+    config: { tags: ["silver","dv","hub","bank"] }
+    columns:
+      - name: bank_hk
+        description: "Hashed bank key."
+        tests: [not_null, unique]
+      - name: business_key
+        description: "Bank business key (bank_id)."
+        tests: [not_null]
+      - name: load_date
+        description: "Hub load timestamp."
+      - name: record_source
+        description: "Record source."
+
+  - name: hub_cash_lease
+    description: "Data Vault hub for cash lease business keys sourced from lease snapshot."
+    config: { tags: ["silver","dv","hub","cash_lease"] }
+    columns:
+      - name: lease_hk
+        description: "Hashed lease key."
+        tests: [not_null, unique]
+      - name: business_key
+        description: "Lease business key (lease_id)."
+        tests: [not_null]
+      - name: load_date
+        description: "Hub load timestamp."
+      - name: record_source
+        description: "Record source."
+
+  - name: hub_settlement
+    description: "Data Vault hub for settlement business keys."
+    config: { tags: ["silver","dv","hub","settlement"] }
+    columns:
+      - name: settlement_hk
+        description: "Hashed settlement key."
+        tests: [not_null, unique]
+      - name: business_key
+        description: "Settlement business key (settlement_id)."
+        tests: [not_null]
+      - name: load_date
+        description: "Hub load timestamp."
+      - name: record_source
+        description: "Record source."
+
+  - name: hub_consent
+    description: "Data Vault hub for consent event business keys sourced from consent snapshot."
+    config: { tags: ["silver","dv","hub","consent"] }
+    columns:
+      - name: consent_hk
+        description: "Hashed consent key."
+        tests: [not_null, unique]
+      - name: business_key
+        description: "Consent business key (consent_id)."
+        tests: [not_null]
+      - name: load_date
+        description: "Hub load timestamp."
+      - name: record_source
+        description: "Record source."
+
+  - name: hub_feedback
+    description: "Data Vault hub for feedback event business keys."
+    config: { tags: ["silver","dv","hub","feedback"] }
+    columns:
+      - name: feedback_hk
+        description: "Hashed feedback key."
+        tests: [not_null, unique]
+      - name: business_key
+        description: "Feedback business key (feedback_id)."
+        tests: [not_null]
+      - name: load_date
+        description: "Hub load timestamp."
+      - name: record_source
+        description: "Record source."
+
+  # Links
+  - name: link_txn_customer
+    description: "Link between transaction and customer."
+    config: { tags: ["silver","dv","link","transaction","customer"] }
+    columns:
+      - name: link_hk
+        description: "Hashed link key."
+        tests: [not_null, unique]
+      - name: transaction_hk
+        description: "Transaction hash key."
+        tests:
+          - not_null
+          - relationships: { to: ref('hub_transaction'), field: transaction_hk }
+      - name: customer_hk
+        description: "Customer hash key."
+        tests:
+          - not_null
+          - relationships: { to: ref('hub_customer'), field: customer_hk }
+
+  - name: link_txn_branch
+    description: "Link between transaction and branch."
+    config: { tags: ["silver","dv","link","transaction","branch"] }
+    columns:
+      - name: link_hk
+        description: "Hashed link key."
+        tests: [not_null, unique]
+      - name: transaction_hk
+        tests:
+          - not_null
+          - relationships: { to: ref('hub_transaction'), field: transaction_hk }
+      - name: branch_hk
+        tests:
+          - not_null
+          - relationships: { to: ref('hub_branch'), field: branch_hk }
+
+  - name: link_txn_currency
+    description: "Link between transaction and currency pair."
+    config: { tags: ["silver","dv","link","transaction","currency"] }
+    columns:
+      - name: link_hk
+        description: "Hashed link key."
+        tests: [not_null, unique]
+      - name: transaction_hk
+        tests:
+          - not_null
+          - relationships: { to: ref('hub_transaction'), field: transaction_hk }
+      - name: from_currency_hk
+        description: "From currency hash key."
+      - name: to_currency_hk
+        description: "To currency hash key."
+
+  - name: link_lease_bank
+    description: "Link between cash lease and bank (from current lease snapshot)."
+    config: { tags: ["silver","dv","link","cash_lease","bank"] }
+    columns:
+      - name: link_hk
+        tests: [not_null, unique]
+      - name: lease_hk
+        tests:
+          - not_null
+          - relationships: { to: ref('hub_cash_lease'), field: lease_hk }
+      - name: bank_hk
+        tests:
+          - not_null
+          - relationships: { to: ref('hub_bank'), field: bank_hk }
+
+  - name: link_lease_currency
+    description: "Link between cash lease and currency (from current lease snapshot)."
+    config: { tags: ["silver","dv","link","cash_lease","currency"] }
+    columns:
+      - name: link_hk
+        tests: [not_null, unique]
+      - name: lease_hk
+        tests:
+          - not_null
+          - relationships: { to: ref('hub_cash_lease'), field: lease_hk }
+      - name: currency_hk
+        tests:
+          - not_null
+          - relationships: { to: ref('hub_currency'), field: currency_hk }
+
+  - name: link_settlement_lease
+    description: "Link between settlement and lease."
+    config: { tags: ["silver","dv","link","settlement","cash_lease"] }
+    columns:
+      - name: link_hk
+        tests: [not_null, unique]
+      - name: settlement_hk
+        tests:
+          - not_null
+          - relationships: { to: ref('hub_settlement'), field: settlement_hk }
+      - name: lease_hk
+        tests:
+          - not_null
+          - relationships: { to: ref('hub_cash_lease'), field: lease_hk }
+
+  - name: link_customer_consent
+    description: "Link between customer and consent event (from current consent snapshot)."
+    config: { tags: ["silver","dv","link","customer","consent"] }
+    columns:
+      - name: link_hk
+        tests: [not_null, unique]
+      - name: consent_hk
+        tests:
+          - not_null
+          - relationships: { to: ref('hub_consent'), field: consent_hk }
+      - name: customer_hk
+        tests:
+          - not_null
+          - relationships: { to: ref('hub_customer'), field: customer_hk }
+
+  - name: link_feedback_customer
+    description: "Link between feedback and customer."
+    config: { tags: ["silver","dv","link","feedback","customer"] }
+    columns:
+      - name: link_hk
+        tests: [not_null, unique]
+      - name: feedback_hk
+        tests:
+          - not_null
+          - relationships: { to: ref('hub_feedback'), field: feedback_hk }
+      - name: customer_hk
+        tests:
+          - not_null
+          - relationships: { to: ref('hub_customer'), field: customer_hk }
+
+  - name: link_feedback_branch
+    description: "Link between feedback and branch."
+    config: { tags: ["silver","dv","link","feedback","branch"] }
+    columns:
+      - name: link_hk
+        tests: [not_null, unique]
+      - name: feedback_hk
+        tests:
+          - not_null
+          - relationships: { to: ref('hub_feedback'), field: feedback_hk }
+      - name: branch_hk
+        tests:
+          - not_null
+          - relationships: { to: ref('hub_branch'), field: branch_hk }
+
+  # Satellites
+  - name: sat_customer_details
+    description: "Customer descriptive satellite (SCD2 via snapshots)."
+    config: { tags: ["silver","dv","satellite","customer","scd2"] }
+    columns:
+      - name: customer_hk
+        tests:
+          - not_null
+          - relationships: { to: ref('hub_customer'), field: customer_hk }
+      - name: is_current
+        description: "Current record flag."
+
+  - name: sat_branch_details
+    description: "Branch descriptive satellite (SCD2 via snapshots)."
+    config: { tags: ["silver","dv","satellite","branch","scd2"] }
+
+  - name: sat_cash_lease_details
+    description: "Cash lease descriptive satellite (SCD2 via snapshots)."
+    config: { tags: ["silver","dv","satellite","cash_lease","scd2"] }
+
+  - name: sat_consent_details
+    description: "Consent descriptive satellite (SCD2 via snapshots)."
+    config: { tags: ["silver","dv","satellite","consent","scd2","compliance"] }
+
+  - name: sat_feedback_details
+    description: "Feedback event satellite."
+    config: { tags: ["silver","dv","satellite","feedback"] }
+
+  - name: sat_transaction_financials
+    description: "Transaction financial satellite enriched with market rate at time."
+    config: { tags: ["silver","dv","satellite","transaction","finance"] }
+
+  - name: sat_vault_stock_daily
+    description: "Vault daily inventory event satellite sourced from raw vault snapshots."
+    config: { tags: ["silver","dv","satellite","vault","inventory","treasury"] }
+
+  - name: sat_settlement_details
+    description: "Settlement event satellite sourced from raw bank settlement records."
+    config: { tags: ["silver","dv","satellite","settlement","bank_reporting"] }
+
+  - name: sat_bank_details
+    description: "Bank descriptive satellite sourced from raw bank master data."
+    config: { tags: ["silver","dv","satellite","bank","treasury"] }

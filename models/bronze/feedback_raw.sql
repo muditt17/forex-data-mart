@@ -1,4 +1,4 @@
-{{ config(materialized='view') }}
+{{ config(materialized='incremental') }}
 
 select *
 from {{ source('raw','feedback_raw') }}

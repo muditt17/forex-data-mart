@@ -24,13 +24,13 @@ rates as (
 rate_at_time as (
   select
     tx.transaction_hk,
-    r.market_rate
+    r.market_rate,
+    row_number() over (partition by tx.transaction_hk order by r.rate_ts desc) as rn
   from tx
   left join rates r
     on tx.from_currency = r.base_currency
-   and tx.to_currency = r.quote_currency
-   and r.rate_ts <= tx.transaction_ts
-  qualify row_number() over (partition by tx.transaction_hk order by r.rate_ts desc) = 1
+    and tx.to_currency = r.quote_currency
+    and r.rate_ts <= tx.transaction_ts
 )
 select
   tx.transaction_hk,
@@ -58,7 +58,7 @@ select
 from tx
 left join rate_at_time rat
   on tx.transaction_hk = rat.transaction_hk
-
+where rn = 1
 {% if is_incremental() %}
-  qualify transaction_hk not in (select transaction_hk from {{ this }})
+  and transaction_hk not in (select transaction_hk from {{ this }})
 {% endif %}

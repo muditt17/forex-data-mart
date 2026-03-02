@@ -1,203 +1,155 @@
-# 💱 FX Currency Exchange Data Platform
+# 💱 FX Currency Exchange Data Platform (v7)
 
-Enterprise-grade data platform for a Currency Exchange Company built
-using:
+Enterprise-grade FX Data Platform built using:
 
--   **Bronze → Silver → Gold architecture**
--   **Data Vault 2.0 (Hubs / Links / Satellites)**
--   **SCD Type 2 via dbt Snapshots**
--   **Dimensional Modeling for Analytics**
--   **Bank Cash Leasing & Consumption Reporting**
-
-------------------------------------------------------------------------
-
-# 🏗️ Overall Architecture
-
-            Source Systems / Third Parties
-                        │
-                        ▼
-            ┌────────────────────┐
-            │      Bronze        │
-            │   Raw Ingestion    │
-            └────────────────────┘
-                        │
-                        ▼
-            ┌────────────────────┐
-            │      Silver        │
-            │   Data Vault 2.0   │
-            │ Hubs / Links / SAT │
-            └────────────────────┘
-                        │
-                        ▼
-            ┌────────────────────────────────────────────┐
-            │                    Gold                    │
-            │  1. Retail / Marketing Analytics           │
-            │  2. Treasury Analytics                     │
-            │  3. Bank Reporting                         │
-            └────────────────────────────────────────────┘
+-   🥉 Bronze (Raw Ingestion)
+-   🥈 Silver (Data Vault 2.0 + Snapshots)
+-   🥇 Gold (Dimensional Marts -- Retail, Treasury, Bank Reporting)
+-   🔁 SCD Type 2 via dbt Snapshots
+-   ⚡ Incremental Processing
 
 ------------------------------------------------------------------------
 
-# 🥉 Bronze Layer -- Raw Layer
+# 🏗️ Architecture Overview
 
-## Purpose
+            Source Systems
+                  │
+                  ▼
+            ┌───────────────┐
+            │     RAW       │  (PostgreSQL raw schema)
+            └───────────────┘
+                  │
+                  ▼
+            ┌───────────────┐
+            │   Bronze      │  (Views over RAW)
+            └───────────────┘
+                  │
+                  ▼
+            ┌────────────────────────────┐
+            │ Silver (Data Vault 2.0)    │
+            │ - Hubs                     │
+            │ - Links                    │
+            │ - Satellites               │
+            │ - Snapshots (SCD2)         │
+            └────────────────────────────┘
+                  │
+                  ▼
+            ┌──────────────────────────────────────────┐
+            │ Gold (Dimensional Models)               │
+            │ 1. Retail / Marketing Analytics         │
+            │ 2. Treasury Analytics                   │
+            │ 3. Bank Reporting                       │
+            └──────────────────────────────────────────┘
 
-Stores data exactly as received from source systems and third parties.
+------------------------------------------------------------------------
 
-## Source Entities
+# 🥉 Bronze Layer
 
--   transactions_raw
--   customers_raw
--   branches_raw
--   fx_rates_raw
--   consent_raw (3rd party consent)
--   feedback_raw (form data)
--   banks_raw
--   cash_lease_raw
--   vault_stock_raw
--   bank_settlement_raw
+### Purpose
 
-## Bronze ER Diagram
+-   Lightweight staging layer
+-   Mirrors raw tables as views
+-   No transformations
+-   No business logic
 
-``` mermaid
-erDiagram
+### Important Update (v7)
 
-    transactions_raw {
-        string transaction_id
-        string customer_id
-        string branch_id
-        string from_currency
-        string to_currency
-        decimal from_amount
-        decimal exchange_rate
-        decimal commission_fee
-        timestamp transaction_ts
-    }
+The following entities were moved from Bronze to Snapshots:
 
-    customers_raw {
-        string customer_id
-        string first_name
-        string last_name
-        string nationality
-        string risk_rating
-        string kyc_status
-    }
+-   Customers
+-   Branches
+-   Cash Leases
+-   Consent
 
-    cash_lease_raw {
-        string lease_id
-        string bank_id
-        string currency_code
-        decimal lease_amount
-        decimal interest_rate
-        date lease_start
-        date lease_end
-    }
+These are now historized using SCD2 snapshots.
 
-    bank_settlement_raw {
-        string settlement_id
-        string lease_id
-        decimal amount_paid
-        date settlement_date
-    }
-
-    vault_stock_raw {
-        string branch_id
-        string currency_code
-        decimal opening_balance
-        decimal closing_balance
-        date stock_date
-    }
-```
+Bronze now only contains non-historized event data: - transactions_raw -
+feedback_raw - vault_stock_raw - bank_settlement_raw - fx_rates_raw -
+banks_raw
 
 ------------------------------------------------------------------------
 
 # 🥈 Silver Layer -- Data Vault 2.0
 
-## Architecture Components
-
-### 🔹 Hubs (Business Keys)
+## 🔹 Hubs
 
 -   hub_customer
--   hub_transaction
 -   hub_branch
+-   hub_transaction
 -   hub_currency
 -   hub_bank
 -   hub_cash_lease
--   hub_settlement
 -   hub_consent
--   hub_feedback
 
-### 🔹 Links (Relationships)
+## 🔹 Links
 
 -   link_txn_customer
 -   link_txn_branch
 -   link_txn_currency
 -   link_lease_bank
 -   link_lease_currency
--   link_settlement_lease
 -   link_customer_consent
--   link_feedback_customer
--   link_feedback_branch
 
-### 🔹 Satellites (SCD2 via Snapshots)
+## 🔹 Satellites
 
--   sat_customer_details
--   sat_branch_details
--   sat_cash_lease_details
--   sat_consent_details
--   sat_feedback_details
 -   sat_transaction_financials
-
-## Silver ER Diagram (Data Vault)
-
-``` mermaid
-erDiagram
-
-    hub_customer ||--o{ link_txn_customer : relates
-    hub_transaction ||--o{ link_txn_customer : relates
-
-    hub_transaction ||--o{ link_txn_branch : relates
-    hub_branch ||--o{ link_txn_branch : relates
-
-    hub_cash_lease ||--o{ link_lease_bank : relates
-    hub_bank ||--o{ link_lease_bank : relates
-
-    hub_cash_lease ||--o{ link_lease_currency : relates
-    hub_currency ||--o{ link_lease_currency : relates
-
-    hub_customer ||--o{ link_customer_consent : relates
-    hub_consent ||--o{ link_customer_consent : relates
-
-    hub_feedback ||--o{ link_feedback_customer : relates
-    hub_customer ||--o{ link_feedback_customer : relates
-
-    hub_customer ||--o{ sat_customer_details : describes
-    hub_branch ||--o{ sat_branch_details : describes
-    hub_cash_lease ||--o{ sat_cash_lease_details : describes
-```
+-   sat_feedback_details
+-   sat_vault_stock_daily
+-   sat_settlement_details
+-   sat_bank_details
+-   sat_customer_details (SCD2)
+-   sat_branch_details (SCD2)
+-   sat_cash_lease_details (SCD2)
+-   sat_consent_details (SCD2)
 
 ------------------------------------------------------------------------
 
-# 🥇 Gold Layer -- Retail / Marketing Analytics
+# 🔁 Snapshots (SCD Type 2)
 
-## Business Use Cases
+Snapshots are implemented for:
 
--   Revenue analytics
--   Channel performance
--   Customer segmentation
--   Feedback analysis
--   Consent compliance tracking
+-   customer_snapshot
+-   branch_snapshot
+-   cash_lease_snapshot
+-   consent_snapshot
 
-## Star Schema
+Strategy: `check`\
+Tracked fields use `hashdiff` for change detection.
+
+Snapshot tables generate:
+
+-   dbt_valid_from
+-   dbt_valid_to
+-   is_current flag
+-   Historical versions preserved
+
+Silver satellites read from snapshot tables to maintain Data Vault
+compliance.
+
+------------------------------------------------------------------------
+
+# 🥇 Gold Layer (Dimensional Models)
+
+## 🚫 Design Rule (v7 Update)
+
+Gold models **never read from raw or bronze tables**.
+
+Gold ONLY consumes: - Silver Hubs - Silver Links - Silver Satellites
+
+This enforces strict layered architecture.
+
+------------------------------------------------------------------------
+
+## 1️⃣ Retail / Marketing Analytics
 
 ### Dimensions
 
--   dim_date
 -   dim_customer
 -   dim_branch
 -   dim_currency
 -   dim_channel
 -   dim_consent_type
+-   dim_date
 
 ### Facts
 
@@ -205,119 +157,51 @@ erDiagram
 -   fact_feedback
 -   fact_customer_consent
 
-## ER Diagram (Retail)
-
-``` mermaid
-erDiagram
-    dim_customer ||--o{ fact_fx_transactions : joins
-    dim_branch ||--o{ fact_fx_transactions : joins
-    dim_currency ||--o{ fact_fx_transactions : joins
-    dim_channel ||--o{ fact_fx_transactions : joins
-
-    dim_customer ||--o{ fact_feedback : joins
-    dim_branch ||--o{ fact_feedback : joins
-
-    dim_customer ||--o{ fact_customer_consent : joins
-    dim_consent_type ||--o{ fact_customer_consent : joins
-```
+Sources: Silver satellites only.
 
 ------------------------------------------------------------------------
 
-# 🏦 Gold Layer -- Treasury Analytics
-
-## Business Use Cases
-
--   Vault inventory monitoring
--   Lease utilization tracking
--   Currency consumption analysis
--   Bank exposure management
+## 2️⃣ Treasury Analytics
 
 ### Dimensions
 
 -   dim_bank
--   dim_lease
 -   dim_currency
 -   dim_branch
--   dim_date
 
 ### Facts
 
 -   fact_vault_inventory_snapshot
 -   fact_cash_consumption
 
-## ER Diagram (Treasury)
-
-``` mermaid
-erDiagram
-    dim_bank ||--o{ fact_cash_consumption : joins
-    dim_lease ||--o{ fact_cash_consumption : joins
-    dim_currency ||--o{ fact_cash_consumption : joins
-    dim_branch ||--o{ fact_cash_consumption : joins
-```
+All inventory and lease logic sourced from: - sat_vault_stock_daily -
+sat_cash_lease_details
 
 ------------------------------------------------------------------------
 
-# 🏛 Gold Layer -- Bank Reporting
-
-## Business Use Cases
-
--   Settlement reporting to banks
--   Interest calculation validation
--   Outstanding balance monitoring
--   Daily bank consumption report
+## 3️⃣ Bank Reporting
 
 ### Facts
 
 -   fact_bank_settlement
--   bank_consumption_report
 
-## ER Diagram (Bank Reporting)
+Uses: - sat_settlement_details - sat_cash_lease_details
 
-``` mermaid
-erDiagram
-    dim_bank ||--o{ fact_bank_settlement : joins
-    dim_lease ||--o{ fact_bank_settlement : joins
-    dim_currency ||--o{ fact_bank_settlement : joins
-
-    fact_cash_consumption ||--o{ bank_consumption_report : aggregates
-    fact_bank_settlement ||--o{ bank_consumption_report : aggregates
-```
+Provides: - Settlement reporting - Interest validation - Outstanding
+balance calculation - Consumption allocation
 
 ------------------------------------------------------------------------
 
-# 🔁 SCD Type 2 Strategy
+# ⚙️ Incremental Strategy
 
-Implemented using **dbt snapshots** for:
-
--   Customers
--   Branches
--   Cash Leases
--   Consent
-
-Fields generated: - dbt_valid_from - dbt_valid_to - is_current flag -
-hashdiff for change detection
-
-------------------------------------------------------------------------
-
-# 🔐 Hashing Strategy
-
-All hubs and links use deterministic hash keys:
-
--   `hash_key()` macro
--   `hashdiff()` macro for satellites
-
-Ensures: - Immutable keys - Scalable joins - Source system independence
-
-------------------------------------------------------------------------
-
-# 🚀 Why This Architecture Works
-
-✔ Scalable\
-✔ Audit-friendly\
-✔ Fully historized\
-✔ Supports regulatory compliance\
-✔ Bank-grade financial reporting\
-✔ Marketing + Treasury separation
+  Layer              Strategy
+  ------------------ ---------------------
+  Hubs               incremental + merge
+  Links              incremental + merge
+  Event Satellites   incremental + merge
+  SCD2 Satellites    Snapshots
+  Gold Facts         incremental
+  Gold Dimensions    table
 
 ------------------------------------------------------------------------
 
@@ -333,7 +217,49 @@ Ensures: - Immutable keys - Scalable joins - Source system independence
          ├── retail_analytics/
          ├── treasury_analytics/
          └── bank_reporting/
+
     snapshots/
     macros/
+    raw_data/
+    scripts/
 
 ------------------------------------------------------------------------
+
+# 🔐 Hashing Strategy
+
+Macros used:
+
+-   hash_key()
+-   hashdiff()
+
+Ensures: - Deterministic surrogate keys - Immutable hub/link keys -
+Proper change detection for satellites
+
+------------------------------------------------------------------------
+
+# 🚀 Production Characteristics
+
+✔ Fully historized customer & lease data\
+✔ Bank-grade reporting\
+✔ Clear separation of layers\
+✔ Incremental processing\
+✔ No gold → raw dependency\
+✔ Snapshot-driven SCD2\
+✔ Data Vault 2.0 compliant
+
+------------------------------------------------------------------------
+
+# 📌 Version Notes (v2)
+
+-   Moved customer, branch, lease, consent to snapshots
+-   Gold models now consume Silver only
+-   Added missing silver satellites for vault stock & settlement
+-   Updated schema.yml files
+-   Enforced strict layered architecture
+
+------------------------------------------------------------------------
+
+# 👤 Author
+
+FX Data Engineering Architecture\
+Enterprise-ready dbt + Data Vault implementation

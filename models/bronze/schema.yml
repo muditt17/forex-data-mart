@@ -1,0 +1,222 @@
+version: 2
+
+models:
+  - name: transactions_raw
+    description: "Bronze raw transactions as ingested from source systems (branch/online/mobile). No dedupe; may contain replays."
+    config:
+      tags: ["bronze", "raw", "fx", "transactions"]
+    columns:
+      - name: transaction_id
+        description: "Source transaction identifier (may repeat in raw due to replays)."
+      - name: transaction_ts
+        description: "Timestamp when transaction occurred."
+      - name: branch_id
+        description: "Branch identifier where transaction was executed (or logical branch for digital)."
+      - name: customer_id
+        description: "Customer identifier from CRM/KYC source."
+      - name: from_currency
+        description: "Currency code sold by customer (e.g., INR)."
+      - name: to_currency
+        description: "Currency code bought by customer (e.g., USD)."
+      - name: from_amount
+        description: "Amount in from_currency."
+      - name: exchange_rate
+        description: "Applied exchange rate at transaction time (business definition depends on pair)."
+      - name: to_amount
+        description: "Amount in to_currency."
+      - name: commission_fee
+        description: "Fee charged for the transaction (typically INR)."
+      - name: payment_method
+        description: "Payment method used (cash/card/upi/bank_transfer)."
+      - name: channel
+        description: "Customer channel (branch/online/mobile)."
+      - name: status
+        description: "Transaction status (COMPLETED/CANCELLED/PENDING)."
+      - name: ingestion_timestamp
+        description: "Timestamp when record landed in raw."
+
+  - name: customers_raw
+    description: "Bronze raw customer profile and KYC attributes."
+    config:
+      tags: ["bronze", "raw", "customers", "kyc"]
+    columns:
+      - name: customer_id
+        description: "Customer business key from source."
+      - name: first_name
+        description: "Customer first name."
+      - name: last_name
+        description: "Customer last name."
+      - name: dob
+        description: "Customer date of birth."
+      - name: nationality
+        description: "Customer nationality (ISO-like code)."
+      - name: risk_rating
+        description: "AML/KYC risk rating (LOW/MEDIUM/HIGH)."
+      - name: kyc_status
+        description: "KYC verification status (VERIFIED/PENDING/REJECTED)."
+      - name: created_at
+        description: "Customer creation timestamp in source."
+      - name: updated_at
+        description: "Customer last updated timestamp in source."
+      - name: ingestion_timestamp
+        description: "Timestamp when record landed in raw."
+
+  - name: branches_raw
+    description: "Bronze raw branch master data."
+    config:
+      tags: ["bronze", "raw", "branches"]
+    columns:
+      - name: branch_id
+        description: "Branch business key."
+      - name: branch_name
+        description: "Branch name."
+      - name: city
+        description: "Branch city."
+      - name: country
+        description: "Branch country."
+      - name: region
+        description: "Branch region/state grouping."
+      - name: opened_date
+        description: "Date the branch opened."
+      - name: ingestion_timestamp
+        description: "Timestamp when record landed in raw."
+
+  - name: fx_rates_raw
+    description: "Bronze market FX rates time series, used for spread and valuation."
+    config:
+      tags: ["bronze", "raw", "fx_rates"]
+    columns:
+      - name: rate_ts
+        description: "Timestamp of the observed market rate."
+      - name: base_currency
+        description: "Base currency code."
+      - name: quote_currency
+        description: "Quote currency code."
+      - name: market_rate
+        description: "Observed market rate for base/quote."
+      - name: ingestion_timestamp
+        description: "Timestamp when record landed in raw."
+
+  - name: consent_raw
+    description: "Bronze raw customer consent events from third-party consent manager(s)."
+    config:
+      tags: ["bronze", "raw", "consent", "compliance"]
+    columns:
+      - name: consent_id
+        description: "Consent event identifier."
+      - name: customer_id
+        description: "Customer business key the consent applies to."
+      - name: consent_type
+        description: "Consent category (marketing/data_sharing/third_party_offers)."
+      - name: source_system
+        description: "Third-party system providing consent data."
+      - name: consent_flag
+        description: "True if consent granted, false otherwise."
+      - name: consent_ts
+        description: "Timestamp when consent was recorded/changed."
+      - name: ingestion_timestamp
+        description: "Timestamp when record landed in raw."
+
+  - name: feedback_raw
+    description: "Bronze raw feedback submissions from forms (NPS/CSAT/branch surveys)."
+    config:
+      tags: ["bronze", "raw", "feedback", "customer_experience"]
+    columns:
+      - name: feedback_id
+        description: "Feedback submission identifier."
+      - name: customer_id
+        description: "Customer business key (nullable for anonymous)."
+      - name: branch_id
+        description: "Branch associated to feedback (nullable for online)."
+      - name: rating
+        description: "Numeric rating (e.g., 0-10)."
+      - name: comments
+        description: "Free-text feedback."
+      - name: form_id
+        description: "Form identifier/source."
+      - name: channel
+        description: "Where feedback was collected (branch/online)."
+      - name: feedback_ts
+        description: "Timestamp of feedback submission."
+      - name: ingestion_timestamp
+        description: "Timestamp when record landed in raw."
+
+  - name: banks_raw
+    description: "Bronze raw bank master data for cash leasing."
+    config:
+      tags: ["bronze", "raw", "banks", "treasury"]
+    columns:
+      - name: bank_id
+        description: "Bank business key."
+      - name: bank_name
+        description: "Bank name."
+      - name: country
+        description: "Bank country."
+      - name: bank_type
+        description: "Bank type/category (Public/Private/Foreign)."
+      - name: ingestion_timestamp
+        description: "Timestamp when record landed in raw."
+
+  - name: cash_lease_raw
+    description: "Bronze raw cash lease contracts from banks (multi-currency)."
+    config:
+      tags: ["bronze", "raw", "cash_lease", "treasury"]
+    columns:
+      - name: lease_id
+        description: "Lease contract identifier."
+      - name: bank_id
+        description: "Bank business key providing cash."
+      - name: currency_code
+        description: "Currency leased."
+      - name: lease_amount
+        description: "Total leased amount in currency_code."
+      - name: interest_rate
+        description: "Interest rate percent for the lease."
+      - name: lease_start
+        description: "Lease start date."
+      - name: lease_end
+        description: "Lease end/maturity date."
+      - name: lease_status
+        description: "Operational status (ACTIVE/ENDED/etc.) if present in raw."
+      - name: ingestion_timestamp
+        description: "Timestamp when record landed in raw."
+
+  - name: vault_stock_raw
+    description: "Bronze daily vault inventory snapshots per branch and currency."
+    config:
+      tags: ["bronze", "raw", "vault", "inventory", "treasury"]
+    columns:
+      - name: branch_id
+        description: "Branch business key."
+      - name: currency_code
+        description: "Currency code for vault inventory."
+      - name: stock_date
+        description: "Inventory snapshot date."
+      - name: opening_balance
+        description: "Opening vault balance for stock_date."
+      - name: closing_balance
+        description: "Closing vault balance for stock_date."
+      - name: inflow_amount
+        description: "Inventory inflow (customer sells foreign / replenishments)."
+      - name: outflow_amount
+        description: "Inventory outflow (customer buys foreign / transfers)."
+      - name: ingestion_timestamp
+        description: "Timestamp when record landed in raw."
+
+  - name: bank_settlement_raw
+    description: "Bronze raw settlement payments made to banks against cash lease contracts."
+    config:
+      tags: ["bronze", "raw", "settlement", "banks", "treasury"]
+    columns:
+      - name: settlement_id
+        description: "Settlement transaction identifier."
+      - name: lease_id
+        description: "Associated lease contract identifier."
+      - name: amount_paid
+        description: "Amount paid to bank for settlement."
+      - name: settlement_date
+        description: "Date of settlement payment."
+      - name: payment_status
+        description: "Payment status (PAID/PENDING/etc.)."
+      - name: ingestion_timestamp
+        description: "Timestamp when record landed in raw."

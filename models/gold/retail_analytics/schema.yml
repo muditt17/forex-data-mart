@@ -1,0 +1,166 @@
+version: 2
+
+models:
+  - name: dim_date
+    description: "Date dimension used across gold marts (derived from transaction date bounds)."
+    config: { tags: ["gold", "retail", "dim"] }
+    columns:
+      - name: date_sk
+        description: "Surrogate key in YYYYMMDD integer form."
+        tests: [not_null, unique]
+      - name: date
+        description: "Calendar date."
+      - name: day
+        description: "Day of month."
+      - name: month
+        description: "Month number."
+      - name: quarter
+        description: "Quarter number."
+      - name: year
+        description: "Year number."
+      - name: is_weekend
+        description: "True if weekend."
+
+  - name: dim_customer
+    description: "Current customer dimension (SCD2 handled in silver; gold uses current)."
+    config: { tags: ["gold", "retail", "dim", "customer"] }
+    columns:
+      - name: customer_sk
+        description: "Customer surrogate key (customer_hk)."
+        tests: [not_null, unique]
+      - name: customer_id
+        description: "Customer business key."
+      - name: first_name
+        description: "First name."
+      - name: last_name
+        description: "Last name."
+      - name: nationality
+        description: "Nationality."
+      - name: risk_rating
+        description: "Risk rating."
+      - name: kyc_status
+        description: "KYC status."
+
+  - name: dim_branch
+    description: "Current branch dimension."
+    config: { tags: ["gold", "retail", "dim", "branch"] }
+    columns:
+      - name: branch_sk
+        description: "Branch surrogate key (branch_hk)."
+        tests: [not_null, unique]
+      - name: branch_id
+        description: "Branch business key."
+      - name: branch_name
+        description: "Branch name."
+      - name: city
+        description: "City."
+      - name: country
+        description: "Country."
+
+  - name: dim_currency
+    description: "Currency dimension (currency hub projection)."
+    config: { tags: ["gold", "retail", "dim", "currency"] }
+    columns:
+      - name: currency_sk
+        description: "Currency surrogate key (currency_hk)."
+        tests: [not_null, unique]
+      - name: currency_code
+        description: "Currency code."
+
+  - name: dim_channel
+    description: "Channel dimension derived from transaction channels."
+    config: { tags: ["gold", "retail", "dim", "channel"] }
+    columns:
+      - name: channel_sk
+        description: "Channel surrogate key."
+        tests: [not_null, unique]
+      - name: channel_name
+        description: "Channel name (branch/online/mobile)."
+
+  - name: dim_consent_type
+    description: "Consent type dimension derived from consent events."
+    config: { tags: ["gold", "retail", "dim", "consent"] }
+    columns:
+      - name: consent_type_sk
+        description: "Consent type surrogate key."
+        tests: [not_null, unique]
+      - name: consent_type
+        description: "Consent type label."
+
+  - name: fact_fx_transactions
+    description: "Retail FX transaction fact table with spread and net revenue."
+    config: { tags: ["gold", "retail", "fact", "transactions"] }
+    columns:
+      - name: date_sk
+        description: "FK to dim_date."
+        tests: [not_null]
+      - name: customer_sk
+        description: "FK to dim_customer."
+      - name: branch_sk
+        description: "FK to dim_branch."
+      - name: from_currency_sk
+        description: "FK to dim_currency (from)."
+      - name: to_currency_sk
+        description: "FK to dim_currency (to)."
+      - name: channel_sk
+        description: "FK to dim_channel."
+      - name: transaction_id
+        description: "Transaction business key."
+      - name: transaction_ts
+        description: "Transaction timestamp."
+      - name: from_amount
+        description: "Amount in from currency."
+      - name: to_amount
+        description: "Amount in to currency."
+      - name: exchange_rate_applied
+        description: "Applied exchange rate."
+      - name: market_rate_at_time
+        description: "Market rate at or before transaction time."
+      - name: spread
+        description: "Applied rate minus market rate."
+      - name: commission_fee
+        description: "Commission fee."
+      - name: spread_revenue
+        description: "Revenue from spread."
+      - name: net_revenue
+        description: "spread_revenue + commission_fee."
+      - name: transaction_count
+        description: "Constant 1 per row for counting."
+
+  - name: fact_feedback
+    description: "Customer feedback fact table (NPS/CSAT style)."
+    config: { tags: ["gold", "retail", "fact", "feedback"] }
+    columns:
+      - name: date_sk
+        description: "FK to dim_date (feedback date)."
+      - name: customer_sk
+        description: "FK to dim_customer."
+      - name: branch_sk
+        description: "FK to dim_branch."
+      - name: feedback_id
+        description: "Feedback business key."
+      - name: rating
+        description: "Rating score."
+      - name: comments
+        description: "Feedback comments."
+      - name: feedback_count
+        description: "Constant 1 per row for counting."
+
+  - name: fact_customer_consent
+    description: "Consent fact table for marketing/compliance reporting (current flag retained)."
+    config: { tags: ["gold", "retail", "fact", "consent", "compliance"] }
+    columns:
+      - name: date_sk
+        description: "FK to dim_date (consent event date)."
+      - name: customer_sk
+        description: "FK to dim_customer."
+      - name: consent_type_sk
+        description: "FK to dim_consent_type."
+      - name: consent_id
+        description: "Consent business key."
+      - name: consent_flag
+        description: "Granted/denied."
+      - name: source_system
+        description: "Third-party consent provider."
+      - name: is_current
+        description: "Current consent record flag (from SCD2)."
