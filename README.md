@@ -474,6 +474,8 @@ models/
      └── bank_reporting/
 snapshots/
 macros/
+raw_data/
+scripts/
 ```
 
 ---
