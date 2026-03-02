@@ -1,4 +1,4 @@
-# 💱 FX Currency Exchange Data Platform (v7)
+# 💱 FX Currency Exchange Data Platform (v2)
 
 Enterprise-grade FX Data Platform built using:
 
@@ -52,7 +52,7 @@ Enterprise-grade FX Data Platform built using:
 -   No transformations
 -   No business logic
 
-### Important Update (v7)
+### Important Update (v2)
 
 The following entities were moved from Bronze to Snapshots:
 
@@ -130,7 +130,7 @@ compliance.
 
 # 🥇 Gold Layer (Dimensional Models)
 
-## 🚫 Design Rule (v7 Update)
+## 🚫 Design Rule (v2 Update)
 
 Gold models **never read from raw or bronze tables**.
 
