@@ -43,7 +43,76 @@ The platform is organized into several architecture capabilities.
 
 # High-Level Platform Architecture
 
-![High Level Architecture](images/high_level_architecture.png)
+```mermaid
+flowchart LR
+
+subgraph Sources["Data Sources"]
+    FX[FX Rate Providers]
+    CORE[Core Banking Systems]
+    TXN[Transaction Systems]
+    BUDGET[Budget Files]
+    REF[Reference Data]
+end
+
+subgraph Ingestion["Ingestion Platform"]
+    S3[S3 Landing Zone]
+    GLUE[AWS Glue]
+    VALID[Schema Validation]
+end
+
+subgraph Storage["Storage Platform"]
+    BRONZE[(Raw Storage)]
+    SILVER[(Standardized Storage)]
+    GOLD[(Business Models)]
+    PRODUCT[(Data Products)]
+end
+
+subgraph Compute["Transformation Platform"]
+    DBT[dbt Models]
+    AIRFLOW[Apache Airflow]
+end
+
+subgraph Consumption["Consumption Layer"]
+    BI[Power BI / QuickSight]
+    SQL[Athena / SQL]
+    ML[ML & Data Science]
+    API[Operational Applications]
+end
+
+subgraph Platform["Platform Services"]
+    DQ[Data Quality]
+    OBS[Observability]
+    GOV[Governance]
+    SEC[Security]
+end
+
+FX --> S3
+CORE --> S3
+TXN --> S3
+BUDGET --> S3
+REF --> S3
+
+S3 --> GLUE
+GLUE --> VALID
+
+VALID --> BRONZE
+BRONZE --> DBT
+DBT --> SILVER
+SILVER --> GOLD
+GOLD --> PRODUCT
+
+AIRFLOW --> DBT
+
+PRODUCT --> BI
+PRODUCT --> SQL
+PRODUCT --> ML
+PRODUCT --> API
+
+DQ -.-> PRODUCT
+OBS -.-> PRODUCT
+GOV -.-> PRODUCT
+SEC -.-> PRODUCT
+```
 
 The platform follows a layered architecture that separates infrastructure, data engineering, business modelling and analytical consumption.
 
@@ -73,7 +142,43 @@ External Systems
 
 # End-to-End Data Flow
 
-![End-to-End Flow](images/pipeline_flow.png)
+```mermaid
+flowchart LR
+
+A[External Data Sources]
+
+B[Landing Zone]
+
+C[Validation]
+
+D[Raw Storage]
+
+E[Standardization]
+
+F[Business Models]
+
+G[Curated Data Products]
+
+H[Business Intelligence]
+
+I[Analytics]
+
+J[Machine Learning]
+
+K[Operational Consumers]
+
+A --> B
+B --> C
+C --> D
+D --> E
+E --> F
+F --> G
+
+G --> H
+G --> I
+G --> J
+G --> K
+```
 
 The platform follows a governed lifecycle for every dataset.
 
